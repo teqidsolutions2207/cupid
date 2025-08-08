@@ -12,12 +12,14 @@ model = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
 # Initialize Flask app
 app = Flask(__name__)
 
-# Allow CORS from specific domain
-CORS(app, resources={r"/*": {"origins": "https://preview--cupid-chat-ui.lovable.app"}})
+# Enable CORS for your frontend URL
+CORS(app, resources={r"/*": {"origins": "https://preview--cupid-chat-ui.lovable.app"}}, supports_credentials=True)
 
-# Analyze chat and return a flirty/smooth reply
-@app.route("/analyze-chat", methods=["POST"])
+@app.route("/analyze-chat", methods=["POST", "OPTIONS"])
 def analyze_chat():
+    if request.method == "OPTIONS":
+        return '', 204
+
     data = request.get_json()
     conversation = data.get("conversation", "")
     tone = data.get("tone", "flirty")
@@ -43,9 +45,11 @@ Reply:
         print("Error:", e)
         return jsonify({"error": "Could not generate a reply."}), 500
 
-# Generate a pickup line
-@app.route("/generate-line", methods=["POST"])
+@app.route("/generate-line", methods=["POST", "OPTIONS"])
 def generate_line():
+    if request.method == "OPTIONS":
+        return '', 204
+
     data = request.get_json()
     context = data.get("context", "something romantic or quirky")
     tone = data.get("tone", "flirty")
@@ -65,7 +69,7 @@ Only return the pickup line without any explanation.
         response = openai.ChatCompletion.create(
             model=model,
             messages=[{"role": "user", "content": prompt}],
-            temperature=1.0,  # More creative
+            temperature=1.0,
             max_tokens=100,
         )
         line = response['choices'][0]['message']['content'].strip()
@@ -74,10 +78,11 @@ Only return the pickup line without any explanation.
         print("Error:", e)
         return jsonify({"error": "Could not generate a pickup line."}), 500
 
-
-# Get a dating tip
-@app.route("/get-dating-tip", methods=["GET"])
+@app.route("/get-dating-tip", methods=["GET", "OPTIONS"])
 def get_dating_tip():
+    if request.method == "OPTIONS":
+        return '', 204
+
     prompt = """
 You're a dating coach. Give one short, practical, and confident dating tip for online chats.
 
@@ -96,6 +101,5 @@ Dating Tip:
         print("Error:", e)
         return jsonify({"error": "Could not fetch a tip."}), 500
 
-# Run the app
 if __name__ == "__main__":
     app.run(debug=True)
